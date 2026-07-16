@@ -1,4 +1,4 @@
-use std::sync::mpsc;
+use std::sync::mpsc::{self, SyncSender};
 
 use crate::config::{KernelConfig, Language, RunReport, RunRequest, ScriptInput};
 use crate::config::ScriptInputSource;
@@ -9,12 +9,13 @@ use crate::python_runtime::{spawn_python_worker, PythonTask};
 
 pub struct Kernel {
     config: KernelConfig,
-    python_tx: mpsc::Sender<PythonTask>,
-    lua_tx: mpsc::Sender<LuaTask>,
+    python_tx: SyncSender<PythonTask>,
+    lua_tx: SyncSender<LuaTask>,
 }
 
 impl Kernel {
     pub fn new(config: KernelConfig) -> KernelResult<Self> {
+        // Workers are persistent to avoid runtime startup cost on repeated runs.
         let python_tx = if config.python_enabled {
             spawn_python_worker()?
         } else {

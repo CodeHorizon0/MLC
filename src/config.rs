@@ -7,6 +7,8 @@ pub struct KernelConfig {
     pub base_dir: PathBuf,
     pub python_enabled: bool,
     pub lua_enabled: bool,
+    pub worker_queue_capacity: usize,
+    pub reuse_runtime_cache: bool,
 }
 
 impl Default for KernelConfig {
@@ -15,6 +17,8 @@ impl Default for KernelConfig {
             base_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
             python_enabled: true,
             lua_enabled: true,
+            worker_queue_capacity: 32,
+            reuse_runtime_cache: true,
         }
     }
 }

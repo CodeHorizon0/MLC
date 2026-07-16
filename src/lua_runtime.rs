@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{Receiver, SyncSender};
 use std::thread;
 use std::time::Instant;
 
@@ -13,11 +13,11 @@ use crate::util::utc_now_rfc3339_nanos;
 #[derive(Debug)]
 pub struct LuaTask {
     pub graph: DependencyGraph,
-    pub reply: Sender<KernelResult<RunReport>>,
+    pub reply: std::sync::mpsc::Sender<KernelResult<RunReport>>,
 }
 
-pub fn spawn_lua_worker() -> KernelResult<Sender<LuaTask>> {
-    let (tx, rx) = std::sync::mpsc::channel::<LuaTask>();
+pub fn spawn_lua_worker() -> KernelResult<SyncSender<LuaTask>> {
+    let (tx, rx) = std::sync::mpsc::sync_channel::<LuaTask>(64);
 
     thread::Builder::new()
         .name("kernel-lua-worker".to_string())

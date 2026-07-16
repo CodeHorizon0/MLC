@@ -10,11 +10,27 @@ use chrono::{SecondsFormat, Utc};
 
 pub fn normalize_abs(path: impl AsRef<Path>) -> KernelResult<PathBuf> {
     let path = path.as_ref();
-    if path.is_absolute() {
-        Ok(path.to_path_buf())
+    let joined = if path.is_absolute() {
+        path.to_path_buf()
     } else {
-        Ok(std::env::current_dir()?.join(path))
+        std::env::current_dir()?.join(path)
+    };
+
+    Ok(clean_path(joined))
+}
+
+fn clean_path(path: PathBuf) -> PathBuf {
+    let mut result = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                result.pop();
+            }
+            other => result.push(other.as_os_str()),
+        }
     }
+    result
 }
 
 pub fn canonical_if_possible(path: impl AsRef<Path>) -> KernelResult<PathBuf> {
@@ -48,19 +64,24 @@ pub fn parse_script_input_source(base_dir: &Path, raw: &str) -> ScriptInput {
         return ScriptInput::Code(raw.to_string());
     }
 
-    let candidate = Path::new(trimmed);
-    let path_like = candidate.is_absolute()
-        || candidate.exists()
-        || base_dir.join(candidate).exists()
+    let normalized = trimmed.replace('\\', "/");
+    let candidate = Path::new(&normalized);
+    let resolved = if candidate.is_absolute() {
+        candidate.to_path_buf()
+    } else {
+        base_dir.join(candidate)
+    };
+
+    let extension = candidate.extension().and_then(|v| v.to_str());
+    let looks_like_file = matches!(extension, Some("py") | Some("lua"))
+        || resolved.exists()
         || trimmed.starts_with("./")
         || trimmed.starts_with("../")
-        || trimmed.starts_with(r".\")
-        || trimmed.starts_with(r"..\")
-        || trimmed.ends_with(".py")
-        || trimmed.ends_with(".lua");
+        || normalized.starts_with("./")
+        || normalized.starts_with("../");
 
-    if path_like {
-        ScriptInput::Path(candidate.to_path_buf())
+    if looks_like_file {
+        ScriptInput::Path(resolved)
     } else {
         ScriptInput::Code(raw.to_string())
     }

@@ -1,33 +1,58 @@
-# kernel_core
+# MLC Kernel Core
 
-Rust kernel foundation for an application that embeds Python and Lua scripts.
+## Features
 
-## What this version adds
+- Persistent Python and Lua workers.
+- Reused runtimes for repeated short executions.
+- Stable long running execution through isolated worker queues.
+- Dependency graph discovery for Python and Lua local modules.
+- Absolute and relative path normalization.
+- Windows and Unix path input support.
+- Inline code execution support.
 
-- `run` accepts either inline code or a path to a file
-- `run_python` and `run_lua` accept either inline source code or a file path string
-- automatic dependency discovery for local Python imports
-- automatic dependency discovery for Lua `require(...)`
-- automatic preload/import registration for discovered local modules
-- shared host API for both languages
-- worker-based isolation for Python and Lua execution
+## Running
 
-## Notes
-
-- Python uses PyO3 embedding and registers the `host` module before interpreter initialization.
-- Lua uses `mlua` with safe standard libraries and per-module `package.preload` hooks.
-- The dependency scanner is intentionally lightweight and focused on normal project-style imports.
-
-## Example
-
-```rust
-use kernel_core::{Kernel, KernelConfig};
-
-let kernel = Kernel::new(KernelConfig::default())?;
-let report = kernel.run_python("examples/python_app/main.py")?;
-println!("{:?}", report);
+```bash
+cargo run
 ```
 
-## Important
+The demo starts:
 
-This project is structured as a foundation. The import resolver is practical and safe, but not a full language parser. It is designed to cover common multi-file application layouts without manually listing every dependency.
+1. Python file execution from `python_app/main.py`.
+2. Lua file execution from `lua_app/main.lua`.
+3. Inline Python execution.
+4. Inline Lua execution.
+
+## Path handling
+
+The kernel accepts:
+
+- `python_app/main.py`
+- `./python_app/main.py`
+- `python_app\\main.py`
+- absolute paths
+
+Paths are normalized before loading and checked against the filesystem.
+
+## Worker model
+
+Python and Lua use dedicated long-lived threads:
+
+- startup cost is paid once;
+- runtime state can be reused;
+- task queues prevent unlimited memory growth;
+- repeated executions avoid recreating interpreters.
+
+## Examples
+
+Python:
+
+```python
+print("hello")
+```
+
+Lua:
+
+```lua
+print("hello")
+```

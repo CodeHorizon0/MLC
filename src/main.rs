@@ -1,21 +1,30 @@
 use kernel_core::{Kernel, KernelConfig};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = KernelConfig::default();
+    config.base_dir = std::env::current_dir()?;
 
-    let kernel = Kernel::new(KernelConfig::default())?;
+    let kernel = Kernel::new(config)?;
 
-    let python_demo = r#"./main.py"#;
+    println!("running python worker");
+    let python_report = kernel.run_python("python_app/main.py")?;
+    println!("python report: {:?}", python_report);
 
-//     let lua_demo = r#"
-// local host = host
-// print('lua demo', host.cwd())
-// "#;
+    println!("running lua worker");
+    let lua_report = kernel.run_lua("lua_app/main.lua")?;
+    println!("lua report: {:?}", lua_report);
 
-    let report_py = kernel.run_python(python_demo)?;
-    println!("python report: {:?}", report_py);
+    println!("running inline python");
+    let inline_report = kernel.run_python(r#"
+print('inline python execution')
+"#)?;
+    println!("inline report: {:?}", inline_report);
 
-    // let report_lua = kernel.run_lua(lua_demo)?;
-    // println!("lua report: {:?}", report_lua);
+    println!("running inline lua");
+    let inline_lua = kernel.run_lua(r#"
+print('inline lua execution')
+"#)?;
+    println!("inline lua report: {:?}", inline_lua);
 
     Ok(())
 }

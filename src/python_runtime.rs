@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{Receiver, SyncSender};
 use std::thread;
 use std::time::Instant;
 
@@ -14,11 +14,11 @@ use crate::util::{to_cstring, utc_now_rfc3339_nanos};
 #[derive(Debug)]
 pub struct PythonTask {
     pub graph: DependencyGraph,
-    pub reply: Sender<KernelResult<RunReport>>,
+    pub reply: std::sync::mpsc::Sender<KernelResult<RunReport>>,
 }
 
-pub fn spawn_python_worker() -> KernelResult<Sender<PythonTask>> {
-    let (tx, rx) = std::sync::mpsc::channel::<PythonTask>();
+pub fn spawn_python_worker() -> KernelResult<SyncSender<PythonTask>> {
+    let (tx, rx) = std::sync::mpsc::sync_channel::<PythonTask>(64);
 
     thread::Builder::new()
         .name("kernel-python-worker".to_string())
