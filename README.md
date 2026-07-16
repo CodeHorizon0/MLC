@@ -22,6 +22,7 @@ The demo starts:
 2. Lua file execution from `lua_app/main.lua`.
 3. Inline Python execution.
 4. Inline Lua execution.
+5. Auto import libs
 
 ## Path handling
 
