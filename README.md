@@ -48,11 +48,13 @@ Python and Lua use dedicated long-lived threads:
 Python:
 
 ```python
-print("hello")
+kernel.run_python("python_app/main.py")?;
 ```
 
 Lua:
 
 ```lua
-print("hello")
+kernel.run_lua("lua_app/main.lua")?;
 ```
+
+*Language workers supports inline code*
