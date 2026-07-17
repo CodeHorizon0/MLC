@@ -2,10 +2,10 @@
 
 ## Features
 
-- Persistent Python and Lua workers.
+- Persistent Python, Lua and JavaScript workers.
 - Reused runtimes for repeated short executions.
 - Stable long running execution through isolated worker queues.
-- Dependency graph discovery for Python and Lua local modules.
+- Dependency graph discovery for Python, Lua and JavaScript local modules.
 - Absolute and relative path normalization.
 - Windows and Unix path input support.
 - Inline code execution support.
@@ -59,3 +59,12 @@ kernel.run_lua("lua_app/main.lua")?;
 ```
 
 *Language workers supports inline code*
+
+
+## JavaScript
+
+JavaScript uses QuickJS through rquickjs. The runtime provides a persistent worker and a basic browser-like console API.
+
+```javascript
+console.log('hello from js');
+```

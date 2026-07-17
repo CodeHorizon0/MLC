@@ -17,6 +17,9 @@ pub enum KernelError {
     #[error("Lua error: {0}")]
     Lua(String),
 
+    #[error("JS error: {0}")]
+    Js(String),
+
     #[error("unsupported language: {0}")]
     UnsupportedLanguage(String),
 

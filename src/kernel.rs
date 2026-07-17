@@ -5,12 +5,14 @@ use crate::config::ScriptInputSource;
 use crate::error::{KernelError, KernelResult};
 use crate::graph::{build_graph, DependencyGraph};
 use crate::lua_runtime::{spawn_lua_worker, LuaTask};
+use crate::js_runtime::{spawn_js_worker, JsTask};
 use crate::python_runtime::{spawn_python_worker, PythonTask};
 
 pub struct Kernel {
     config: KernelConfig,
     python_tx: SyncSender<PythonTask>,
     lua_tx: SyncSender<LuaTask>,
+    js_tx: SyncSender<JsTask>,
 }
 
 impl Kernel {
@@ -28,10 +30,17 @@ impl Kernel {
             return Err(KernelError::WorkerInit("lua runtime disabled".into()));
         };
 
+        let js_tx = if config.js_enabled {
+            spawn_js_worker()?
+        } else {
+            return Err(KernelError::WorkerInit("js runtime disabled".into()));
+        };
+
         Ok(Self {
             config,
             python_tx,
             lua_tx,
+            js_tx,
         })
     }
 
@@ -63,12 +72,20 @@ impl Kernel {
         self.run(request)
     }
 
+    pub fn run_js<I>(&self, input: I) -> KernelResult<RunReport>
+    where
+        I: ScriptInputSource,
+    {
+        self.run(RunRequest { language: Language::Js, input: input.into_script_input(&self.config.base_dir), working_dir: None })
+    }
+
     pub fn run(&self, request: RunRequest) -> KernelResult<RunReport> {
         let base_dir = request.working_dir.as_deref().unwrap_or(&self.config.base_dir);
         let graph = build_graph(request.language, request.input, base_dir)?;
         match request.language {
             Language::Python => self.dispatch_python(graph),
             Language::Lua => self.dispatch_lua(graph),
+            Language::Js => self.dispatch_js(graph),
         }
     }
 
@@ -103,4 +120,12 @@ impl Kernel {
             .map_err(|_| KernelError::WorkerClosed)?;
         reply_rx.recv().map_err(|_| KernelError::WorkerClosed)?
     }
+
+    fn dispatch_js(&self, graph: DependencyGraph) -> KernelResult<RunReport> {
+        let (reply_tx, reply_rx) = mpsc::channel();
+        self.js_tx
+        .send(JsTask { graph, reply: reply_tx })
+        .map_err(|_| KernelError::WorkerClosed)?;
+    reply_rx.recv().map_err(|_| KernelError::WorkerClosed)?
+}
 }

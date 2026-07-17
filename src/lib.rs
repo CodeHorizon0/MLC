@@ -4,6 +4,7 @@ pub mod graph;
 pub mod host;
 pub mod kernel;
 pub mod lua_runtime;
+pub mod js_runtime;
 pub mod python_runtime;
 pub mod util;
 

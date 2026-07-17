@@ -6,25 +6,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let kernel = Kernel::new(config)?;
 
-    println!("running python worker");
-    let python_report = kernel.run_python("python_app/main.py")?;
+    println!("\nPython:\n");
+    let python_report = kernel.run_python("examples/python_app/main.py")?;
     println!("python report: {:?}", python_report);
 
-    println!("running lua worker");
-    let lua_report = kernel.run_lua("lua_app/main.lua")?;
+    println!("\nLua:\n");
+    let lua_report = kernel.run_lua("examples/lua_app/main.lua")?;
     println!("lua report: {:?}", lua_report);
 
-    println!("running inline python");
-    let inline_report = kernel.run_python(r#"
-print('inline python execution')
-"#)?;
-    println!("inline report: {:?}", inline_report);
+    println!("\nJavaScript:\n");
+    let js_report = kernel.run_js("examples/js_app/main.js")?;
+    println!("JavaScript report: {:?}", js_report);
 
-    println!("running inline lua");
-    let inline_lua = kernel.run_lua(r#"
-print('inline lua execution')
-"#)?;
-    println!("inline lua report: {:?}", inline_lua);
 
     Ok(())
 }

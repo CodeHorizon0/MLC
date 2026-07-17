@@ -73,7 +73,7 @@ pub fn parse_script_input_source(base_dir: &Path, raw: &str) -> ScriptInput {
     };
 
     let extension = candidate.extension().and_then(|v| v.to_str());
-    let looks_like_file = matches!(extension, Some("py") | Some("lua"))
+    let looks_like_file = matches!(extension, Some("py") | Some("lua") | Some("js"))
         || resolved.exists()
         || trimmed.starts_with("./")
         || trimmed.starts_with("../")
@@ -103,6 +103,8 @@ pub fn path_to_module_name(base_dir: &Path, file: &Path) -> Option<String> {
         if let Some(stripped) = last.strip_suffix(".py") {
             *last = stripped.to_string();
         } else if let Some(stripped) = last.strip_suffix(".lua") {
+            *last = stripped.to_string();
+        } else if let Some(stripped) = last.strip_suffix(".js") {
             *last = stripped.to_string();
         }
     }

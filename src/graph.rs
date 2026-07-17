@@ -41,6 +41,7 @@ pub fn build_graph(language: Language, input: ScriptInput, base_dir: &Path) -> K
     match language {
         Language::Python => build_python_graph(input, base_dir),
         Language::Lua => build_lua_graph(input, base_dir),
+        Language::Js => build_js_graph(input, base_dir),
     }
 }
 
@@ -104,6 +105,78 @@ fn build_python_graph(input: ScriptInput, base_dir: &Path) -> KernelResult<Depen
         entry_is_code,
         temp_guard: owned_temp,
     })
+}
+
+fn build_js_graph(input: ScriptInput, base_dir: &Path) -> KernelResult<DependencyGraph> {
+    let base_dir = normalize_abs(base_dir)?;
+    let (entry_path, entry_module, entry_is_code, owned_temp) = match input {
+        ScriptInput::Path(path) => {
+            let abs = resolve_entry_path(&base_dir, &path)?;
+            if !path_exists(&abs) {
+                return Err(KernelError::EntryPathNotFound { path: abs });
+            }
+            let module = path_to_module_name(&base_dir, &abs);
+            (abs, module, false, None)
+        }
+        ScriptInput::Code(code) => {
+            let tmp = NamedTempFile::new_in(&base_dir)?;
+            write_string(tmp.path(), &code)?;
+            let abs = canonical_if_possible(tmp.path())?;
+            let module = Some("__kernel_entry__".to_string());
+            (abs, module, true, Some(tmp))
+        }
+    };
+
+    let mut modules = BTreeMap::new();
+    let mut visited = BTreeSet::new();
+    let mut queue = VecDeque::new();
+    queue.push_back(entry_path.clone());
+
+    while let Some(file) = queue.pop_front() {
+        let file = canonical_if_possible(&file)?;
+        if !visited.insert(file.clone()) {
+            continue;
+        }
+        let name = path_to_module_name(&base_dir, &file).unwrap_or_else(|| file.file_stem().unwrap().to_string_lossy().to_string());
+        unique_push(&mut modules, name, file.clone());
+        let source = fs::read_to_string(&file)?;
+        for imported in js_imports_from_source(&source) {
+            for candidate in resolve_js_import_candidates(&file, &imported) {
+                if candidate.exists() {
+                    queue.push_back(candidate);
+                    break;
+                }
+            }
+        }
+    }
+
+    Ok(DependencyGraph {
+        language: Language::Js,
+        entry_path,
+        entry_module,
+        base_dir,
+        modules,
+        entry_is_code,
+        temp_guard: owned_temp,
+    })
+}
+
+fn js_imports_from_source(source: &str) -> Vec<String> {
+    let re = Regex::new(r#"(?:import\s+.*?from\s+['\"](.+?)['\"]|require\(['\"](.+?)['\"]\))"#).unwrap();
+    re.captures_iter(source).filter_map(|c| c.get(1).or_else(|| c.get(2)).map(|v| v.as_str().to_string())).collect()
+}
+
+fn resolve_js_import_candidates(file: &Path, module: &str) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let path = if module.starts_with("./") || module.starts_with("../") {
+        file.parent().unwrap_or(Path::new(".")).join(module)
+    } else {
+        PathBuf::from(module)
+    };
+    out.push(path.clone());
+    out.push(path.with_extension("js"));
+    out.push(path.join("index.js"));
+    out
 }
 
 fn build_lua_graph(input: ScriptInput, base_dir: &Path) -> KernelResult<DependencyGraph> {
