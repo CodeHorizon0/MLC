@@ -1,67 +1,22 @@
-# MLC Kernel Core
+Rust Functions Runtime aka CF Worker/AWS Functions clone
 
-## Features
+Features:
+- JS and TypeScript functions stored as separate files in ./js
+- automatic loading on startup
+- HTTP proxy layer
+- idle server waiting for requests
+- request routing to JS workers
+- isolated QuickJS contexts
+- TypeScript files are transpiled to plain JavaScript before execution
 
-- Persistent Python, Lua and JavaScript workers.
-- Reused runtimes for repeated short executions.
-- Stable long running execution through isolated worker queues.
-- Dependency graph discovery for Python, Lua and JavaScript local modules.
-- Absolute and relative path normalization.
-- Windows and Unix path input support.
-- Inline code execution support.
+## Run:
+`cargo run`
+or `cargo build --release`
 
-## Running
+## Calling:
 
-```bash
-cargo run
-```
+JavaScript
+GET http://localhost:8080/functions/hello
 
-The demo starts:
-
-1. Python file execution from `python_app/main.py`.
-2. Lua file execution from `lua_app/main.lua`.
-3. Inline Python execution.
-4. Inline Lua execution.
-5. Auto import libs
-
-## Path handling
-
-The kernel accepts:
-
-- `python_app/main.py`
-- `./python_app/main.py`
-- `python_app\\main.py`
-- absolute paths
-
-Paths are normalized before loading and checked against the filesystem.
-
-## Worker model
-
-Python and Lua use dedicated long-lived threads:
-
-- startup cost is paid once;
-- runtime state can be reused;
-- task queues prevent unlimited memory growth;
-- repeated executions avoid recreating interpreters.
-
-## Examples
-
-**Python:**
-
-```python
-kernel.run_python("examples/python_app/main.py")?;
-```
-
-**Lua:**
-
-```lua
-kernel.run_lua("examples/lua_app/main.lua")?;
-```
-
-**JavaScript:**
-
-```js
-kernel.run_js("examples/js_app/main.js")?;
-```
-
-*Language workers supports inline code*
+TypeScript :
+GET http://localhost:8080/functions/typed

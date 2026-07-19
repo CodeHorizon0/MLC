@@ -1,23 +1,14 @@
-use kernel_core::{Kernel, KernelConfig};
+mod runtime;
+mod server;
+mod worker;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut config = KernelConfig::default();
-    config.base_dir = std::env::current_dir()?;
+use runtime::FunctionsRuntime;
+use std::path::PathBuf;
 
-    let kernel = Kernel::new(config)?;
-
-    println!("\nPython:\n");
-    let python_report = kernel.run_python("examples/python_app/main.py")?;
-    println!("python report: {:?}", python_report);
-
-    println!("\nLua:\n");
-    let lua_report = kernel.run_lua("examples/lua_app/main.lua")?;
-    println!("lua report: {:?}", lua_report);
-
-    println!("\nJavaScript:\n");
-    let js_report = kernel.run_js("examples/js_app/main.js")?;
-    println!("JavaScript report: {:?}", js_report);
-
-
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let runtime = FunctionsRuntime::new();
+    runtime.load_directory(PathBuf::from("./functions")).await?;
+    server::start(runtime).await?;
     Ok(())
 }
