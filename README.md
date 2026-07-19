@@ -2,10 +2,10 @@
 
 ## Features
 
-- Persistent Python and Lua workers.
+- Persistent Python, Lua and JavaScript workers.
 - Reused runtimes for repeated short executions.
 - Stable long running execution through isolated worker queues.
-- Dependency graph discovery for Python and Lua local modules.
+- Dependency graph discovery for Python, Lua and JavaScript local modules.
 - Absolute and relative path normalization.
 - Windows and Unix path input support.
 - Inline code execution support.
@@ -46,16 +46,22 @@ Python and Lua use dedicated long-lived threads:
 
 ## Examples
 
-Python:
+**Python:**
 
 ```python
-kernel.run_python("python_app/main.py")?;
+kernel.run_python("examples/python_app/main.py")?;
 ```
 
-Lua:
+**Lua:**
 
 ```lua
-kernel.run_lua("lua_app/main.lua")?;
+kernel.run_lua("examples/lua_app/main.lua")?;
+```
+
+**JavaScript:**
+
+```js
+kernel.run_js("examples/js_app/main.js")?;
 ```
 
 *Language workers supports inline code*
